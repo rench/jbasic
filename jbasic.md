@@ -142,3 +142,61 @@ public ThreadPoolExecutor(int corePoolSize,
 > - 偏向锁,在锁定的对象的头部（Mark Word)存储偏向线程的ID,以后同一个线程再次进入该同步块时和退出同步块时,不需要进行CAS操作解锁和加锁，直接判断线程ID是否等于该线程即可。锁标志01。
 > - 轻量级锁,会在当前线程的栈帧中创建一个锁定记录(Lock Record),然后把锁对象的对象头中的Mark Word复制到刚才创建的Lock Record,把所记录中的Owner替换成所对象，然后把锁对象的对象头的Mark Word替换为指向所记录的指针。锁标志00。
 > - 重量级锁,重量级锁是依赖对象内部的monitor锁来实现的，而monitor又依赖操作系统的MutexLock(互斥锁)来实现的，所以重量级锁也被成为互斥锁.锁对象头部的会被替换为指向MutexLock的指针,锁标志10.
+- synchronized与Lock的区别？
+> 1. 首先synchronized是java内置关键字，在jvm层面，Lock是个java类；
+> 2. synchronized无法判断是否获取锁的状态，Lock可以判断是否获取到锁；
+> 3. synchronized会自动释放锁(a 线程执行完同步代码会释放锁 ；b 线程执行过程中发生异常会释放锁)，Lock需在finally中手工释放锁（unlock()方法释放锁），否则容易造成线程死锁；
+> 4. 用synchronized关键字的两个线程1和线程2，如果当前线程1获得锁，线程2线程等待。如果线程1阻塞，线程2则会一直等待下去，而Lock锁就不一定会等待下去，如果尝试获取不到锁，线程可以不用一直等待就结束了；
+> 5. synchronized的锁可重入、不可中断、非公平，而Lock锁可重入、可判断、可公平（两者皆可）
+> 6. Lock锁适合大量同步的代码的同步问题，synchronized锁适合代码少量的同步问题。
+- 说一下 atomic 的原理？
+> - https://www.jb51.net/article/129690.htm
+> - 最核心的CAS操作,`sun.misc.Unsafe`, `compareAndSwapObject`
+- 讲一下ReentrantLock实现原理？
+> ReentrantLock实现Lock接口，内部拥有NonfairSync和FairSync，实现公平锁和非公平锁，公平锁是先进先出的原理，谁先等待锁，谁就在下次先获得锁。Sync实现AQS，内部的线程锁等待使用CAS交换状态和LockSupport进行park(),unpark();
+> - https://blog.csdn.net/u011521203/article/details/80186741
+# 反射
+- 什么是反射？
+> 主要是指程序可以访问、检测和修改它本身状态或行为的一种能力
+- 什么是Java序列化？为什么序列化？序列化有哪些方式？
+> 简单来说序列化就是把Java对象储存在某一地方（硬盘、网络），也就是将对象的内容进行流化，可以使二进制数据，也可是可存储数据的字符串等。
+- 什么是动态代理？动态代理是如何实现的？动态代理有哪些应用？
+> - 动态代理: 当想要给实现了某个接口的类中的方法，加一些额外的处理。比如说加日志，加事务等。可以给这个类创建一个代理，故名思议就是创建一个新的类，这个类不仅包含原来类方法的功能，而且还在原来的基础上添加了额外处理的新类。这个代理类并不是定义好的，是动态生成的。具有解耦意义，灵活，扩展性强。
+> - 动态代理实现：首先必须定义一个接口，还要有一个InvocationHandler(将实现接口的类的对象传递给它)处理类。再有一个工具类Proxy(习惯性将其称为代理类，因为调用他的newInstance()可以产生代理对象,其实他只是一个产生代理对象的工具类）。利用到InvocationHandler，拼接代理类源码，将其编译生成代理类的二进制码，利用加载器加载，并将其实例化产生代理对象，最后返回。
+> - 动态代理的应用：Spring的AOP，加事务，加权限，加日志。
+- 动态代理实现？
+> 1. jdk动态代理，jdk动态代理是由Java内部的反射机制来实现的，目标类基于统一的接口（InvocationHandler）
+> 2. cglib动态代理，cglib动态代理底层则是借助asm来实现的，cglib这种第三方类库实现的动态代理应用更加广泛，且在效率上更有优势。可以直接代理实现类，不需要接口。
+> 3. 参考 JpaRepositoryFactoryBean
+
+# Web/安全
+- 什么是 XSS 攻击，如何避免？
+> XSS，跨站脚本攻击，主要是在参数/连接/内容存储中构造恶意js脚本导致的攻击。
+- 什么是 CSRF 攻击，如何避免？
+> CSRF，跨站请求伪造，用户已经登录B网站，在A网站中，构造一个请求B网站的连接，引导用户访问，访问后A网站后，隐身的就访问了B网站的数据或者请求。
+> - https://www.cnblogs.com/lovesong/p/5233195.html
+# 异常
+- throw 和 throws 的区别？
+> throw是指定抛出异常动作， throws是用于申明异常，不执行抛出异常动作。
+- final、finally、finalize 有什么区别？
+> 1. final关键字用于修饰类，方法，变量，修饰类时，该类不能被继承(String.java)，修饰方法时，方法不能被继承，修饰变量时，变量不能被重新赋值。
+> 2. finally用于try-catch-finally组合，finally中的代码块，在可执行条件下，都会被执行，不管try-catch中是否有return，不管try-catch语句中是否有异常，如果finally中有return将覆盖try-catch中的return。
+> 3. finalize是Object类中的一个方法，默认该方法没有任何操作，当gc进行垃圾回收时，会调用一次finalize，如果需要针对特殊的class进行gc后续清理，可以在该方法中实现逻辑，但是需要注意的时，jvm只会调用一次finalize，调用一次finalize后，如果该对象没有被回收，再次gc清理时，不会再次调用finalize方法。
+- java中常见的异常类？
+> Throwable派生出Error类和Exception类。
+> - Exception: NPE,IllegalArgumentException,ClassNotFoundException,IOException等
+# 网络
+- http 响应码 301 和 302 代表的是什么？有什么区别？
+> - 301 redirect: 301 代表永久性转移(Permanently Moved)。
+> - 302 redirect: 302 代表暂时性转移(Temporarily Moved )。 
+> - 301重定向是永久的重定向，搜索引擎在抓取新内容的同时也将旧的网址替换为重定向之后的网址。
+302重定向是临时的重定向，搜索引擎会抓取新的内容而保留旧的网址。因为服务器返回302代码，搜索引擎认为新的网址只是暂时的。
+- forward 和 redirect 的区别？
+> forward直接转发request请求，redirect返回30x状态码，让浏览器执行跳转到新的url。
+- TCP和UDP的区别和优缺点？
+> 1. TCP面向连接（如打电话要先拨号建立连接）;UDP是无连接的，即发送数据之前不需要建立连接。
+> 2. TCP提供可靠的服务。也就是说，通过TCP连接传送的数据，无差错，不丢失，不重复，且按序到达;UDP尽最大努力交付，即不保证可靠交付。Tcp通过校验和，重传控制，序号标识，滑动窗口、确认应答实现可靠传输。如丢包时的重发控制，还可以对次序乱掉的分包进行顺序控制。
+> 3. UDP具有较好的实时性，工作效率比TCP高，适用于对高速传输和实时性有较高的通信或广播通信。
+> 4. 每一条TCP连接只能是点到点的;UDP支持一对一，一对多，多对一和多对多的交互通信
+- TCP 为什么三次握手？四次断开？
+- 
