@@ -668,3 +668,8 @@ spring.jpa.properties.hibernate.use_sql_comments=true //指出是什么操作生
 > 1. Transient 瞬时 ：对象刚new出来，还没设id，设了其他值。
 > 2. Persistent 持久：调用了save()、saveOrUpdate()，就变成Persistent，有id
 > 3. Detached  脱管 ： 当session  close()完之后，变成Detached。
+- Hibernate 中的 openSession和getCurrentSession 方法的区别？
+> - openSession 从字面上可以看得出来，是打开一个新的session对象，而且每次使用都是打开一个新的session，假如连续使用多次，则获得的session不是同一个对象，并且使用完需要调用close方法关闭session。
+> - getCurrentSession ，从字面上可以看得出来，是获取当前上下文一个session对象，当第一次使用此方法时，会自动产生一个session对象，并且连续使用多次时，得到的session都是同一个对象，这就是与openSession的区别之一，简单而言，getCurrentSession 就是：如果有已经使用的，用旧的，如果没有，建新的。
+- hibernate 实体类必须要有无参构造函数吗？为什么？
+> 因为一个对象new出来的时候，必须要使用无参构造函数，然后调用setter方法进行赋值。
