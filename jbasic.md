@@ -673,3 +673,34 @@ spring.jpa.properties.hibernate.use_sql_comments=true //指出是什么操作生
 > - getCurrentSession ，从字面上可以看得出来，是获取当前上下文一个session对象，当第一次使用此方法时，会自动产生一个session对象，并且连续使用多次时，得到的session都是同一个对象，这就是与openSession的区别之一，简单而言，getCurrentSession 就是：如果有已经使用的，用旧的，如果没有，建新的。
 - hibernate 实体类必须要有无参构造函数吗？为什么？
 > 因为一个对象new出来的时候，必须要使用无参构造函数，然后调用setter方法进行赋值。
+# Mybatis
+
+- Mybatis中#{}和${}的区别？
+> `#{orderId}`会对orderId进行转义，增加引号，可以尽量防止sql注入
+> `${pageSize}`不会对pageSize进行多余操作，原样拼接，主要用于表名，order by，limit等语句。
+- Mybatis四种分页方式？
+> 1. 读取出来，自己用subList分页
+> 2. 在sql语句中些limit
+> 3. 使用拦截器分页，`Interceptor`
+> 4. 使用`RowBounds`
+- RowBounds 是一次性查询全部结果吗？为什么？
+> 是的，rowbounds实际上就是内存分页。
+- mybatis逻辑分页与物理分页？
+> 逻辑分页是把sql语句的查询内容全部读取，在内存中进行逻辑分页。物理分页是基于数据库的分页，通过rownum()、limit等方式进行分页查询。
+- mybatis 是否支持延迟加载？延迟加载的原理是什么？
+> mybatis支持延迟加载，需要开启配置，` <setting name="lazyLoadingEnabled" value="true"/>`。默认是关闭的，和hibernate一样，在需要加载依赖另一方的时候，才会向数据库发送查询语句进行查询。不同点是基于hibernate只有当访问了非主键的属性才会懒加载，mybatis会默认全部加载。
+- mybatis 详解（九）------ 一级缓存、二级缓存？
+> https://www.cnblogs.com/ysocean/p/7342498.html
+- mybatis都有哪些Executor执行器？它们之间的区别是什么？
+> SimpleExecutor、ReuseExecutor、BatchExecutor。
+> - **SimpleExecutor**：每执行一次update或select，就开启一个Statement对象，用完立刻关闭Statement对象。
+> - **ReuseExecutor**：执行update或select，以sql作为key查找Statement对象，存在就使用，不存在就创建，用完后，不关闭Statement对象，而是放置于Map内，供下一次使用。简言之，就是重复使用Statement对象。
+> - **BatchExecutor**：执行update（没有select，JDBC批处理不支持select），将所有sql都添加到批处理中（addBatch()），等待统一执行（executeBatch()），它缓存了多个Statement对象，每个Statement对象都是addBatch()完毕后，等待逐一执行executeBatch()批处理。
+
+> 与JDBC批处理相同。作用范围：Executor的这些特点，都严格限制在SqlSession生命周期范围内。
+> - Mybatis中如何指定使用哪一种Executor执行器？
+> 答：在Mybatis配置文件中，可以指定默认的ExecutorType执行器类型，也可以手动给DefaultSqlSessionFactory的创建SqlSession的方法传递ExecutorType类型参数。
+- mybatis 分页插件的实现原理是什么？
+- mybatis 如何编写一个自定义插件？
+
+# RabbitMQ
