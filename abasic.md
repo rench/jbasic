@@ -214,3 +214,50 @@ String,StringBuffer,StringBuilder？
 > 1. java虚拟机运行的是Java字节码，Dalvik虚拟机运行的是Dalvik字节码；传统的Java程序经过编译，生成Java字节码保存在class文件中，java虚拟机通过解码class文件中的内容来运行程序。而Dalvik虚拟机运行的是Dalvik字节码，所有的Dalvik字节码由Java字节码转换而来，并被打包到一个DEX(Dalvik Executable)可执行文件中Dalvik虚拟机通过解释Dex文件来执行这些字节码。
 > 2. Dalvik可执行文件体积更小。SDK中有一个叫dx的工具负责将java字节码转换为Dalvik字节码。
 > 3. java虚拟机与Dalvik虚拟机架构不同。java虚拟机基于栈架构。程序在运行时虚拟机需要频繁的从栈上读取或写入数据。这过程需要更多的指令分派与内存访问次数，会耗费不少CPU时间，对于像手机设备资源有限的设备来说，这是相当大的一笔开销。Dalvik虚拟机基于寄存器架构，数据的访问通过寄存器间直接传递，这样的访问方式比基于栈方式快的多.
+
+25. https://www.jianshu.com/p/57ba1ed23c49?tdsourcetag=s_pctim_aiomsg
+26. hashcode（）和equals（）的作用、区别、联系？
+> 因为hashCode()并不是完全可靠，有时候不同的对象他们生成的hashcode也会一样（生成hash值得公式可能存在的问题），所以hashCode()只能说是大部分时候可靠，并不是绝对可靠，所以我们可以得出：
+1.equal()相等的两个对象他们的hashCode()肯定相等，也就是用equal()对比是绝对可靠的。
+2.hashCode()相等的两个对象他们的equal()不一定相等，也就是hashCode()不是绝对可靠的。）
+
+27. Handler、Looper、MessageQueue、Thread关系？
+> 一个线程可以有多个Handler实例，一个线程对应一个Looper，一个Looper也只对应一个MessageQueue，一个MessageQueue对应多个Message和Runnable。所以就形成了一对多的对应关系，一方：线程、Looper、MessageQueue；多方：Handler、Message。同时可以看出另一个一对一关系：一个Message实例对应一个Handler实例。
+Service 和 Activity如何交互, 如何在后台下载任务, 并在Activity显示进度？
+https握手过程，如何实现数据加密？客户端如何保证安全实现双重证书校验？请你设计一个登录功能，需要注意哪些安全问题?
+Hashmap实现原理和如何解决散列碰撞（必问），Hashmap底层为什么是线程不安全的？
+
+28. 什么是ART？
+> 即Android Runtime
+ART 的机制与 Dalvik 不同。在Dalvik下，应用每次运行的时候，字节码都需要通过即时编译器（just in time ，JIT）转换为机器码，这会拖慢应用的运行效率，而在ART 环境中，应用在第一次安装的时候，字节码就会预先编译成机器码，使其成为真正的本地应用。这个过程叫做预编译（AOT,Ahead-Of-Time）。这样的话，应用的启动(首次)和执行都会变得更加快速。
+
+> 优点：
+1、系统性能的显著提升。
+2、应用启动更快、运行更快、体验更流畅、触感反馈更及时。
+3、更长的电池续航能力。
+4、支持更低的硬件。
+
+> 缺点：
+1.机器码占用的存储空间更大，字节码变为机器码之后，可能会增加10%-20%（不过在应用包中，可执行的代码常常只是一部分。比如最新的 Google+ APK 是 28.3 MB，但是代码只有 6.9 MB。）
+2.应用的安装时间会变长。
+tips：现在智能手机大部分都可以让用户选择使用Dalvik还是ART模式。当然默认还是使用Dalvik模式。
+用法：设置-辅助功能-开发者选项（开发人员工具）-选择运行环境（不同的手机设置的步骤可能不一样）。
+
+29. RxJava
+> http://gank.io/post/560e15be2dca930e00da1083#toc_26
+
+30. Android消息传递之EventBus 3.0使用详解
+> https://www.cnblogs.com/whoislcj/p/5595714.html
+> https://www.jianshu.com/p/d9516884dbd4
+
+> EventBus主要角色:
+> - Event 传递的事件对象
+> - Subscriber  事件的订阅者 
+> - Publisher  事件的发布者
+> - ThreadMode 定义函数在何种线程中执行
+ 
+> ThreadMode总共四个：
+> - NAIN UI主线程
+> - BACKGROUND 后台线程
+> - POSTING 和发布者处在同一个线程
+> - ASYNC 异步线程
