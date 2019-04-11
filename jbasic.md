@@ -871,3 +871,328 @@ zookeeper只是个服务注册中心，如果kafka可以找到替代品换掉zoo
 
 - 说一下 mysql 的行锁和表锁？
 > https://www.cnblogs.com/chenqionghe/p/4845693.html
+
+- mysql 问题排查常用方法？
+> https://www.jianshu.com/p/8d205e946ca2
+> https://blog.csdn.net/qq_31854907/article/details/83105446
+
+- 如何做 mysql 的性能优化？
+> https://www.cnblogs.com/pengyunjing/p/6591660.html
+
+# Redis
+- 什么是Redis？为什么使用Redis？
+> Redis是一个开源的使用ANSI C语言编写、支持网络、可基于内存亦可持久化的日志型、Key-Value数据库，并提供多种语言的API。 Redis是一个开源的key—value型数据库，支持string、list、set、zset和hash类型数据。对这些数据的操作都是原子性的，redus为了保证效率会定期持久化数据。
+
+> - 为什么使用？
+> 1. 解决应用服务器的cpu和内存压力
+> 2. 减少io的读操作，减轻io的压力
+> 3. 关系型数据库的扩展性不强，难以改变表结构
+
+> - 优点：
+> 1. nosql数据库没有关联关系，数据结构简单，拓展表比较容易
+> 2. nosql读取速度快，对较大数据处理快
+
+> - 适用场景：
+> 1. 数据高并发的读写
+> 2. 海量数据的读写
+> 3. 对扩展性要求高的数据
+
+> - 不适场景：
+> 1. 需要事务支持（非关系型数据库）
+> 2. 基于sql结构化查询储存，关系复杂
+
+- redis 有哪些功能？
+> - 字符串string
+> - 列表list
+> - 集合set
+> - 有序集合zset
+> - hash
+
+- Redis与Memcached的比较？
+> 1. 网络IO模型
+> - Memcached是多线程，非阻塞IO复用的网络模型，分为监听主线程和worker子线程，监听线程监听网络连接，接受请求后，将连接描述字pipe 传递给worker线程，进行读写IO, 网络层使用libevent封装的事件库，多线程模型可以发挥多核作用，但是引入了cache coherency和锁的问题。
+> - Redis使用单线程的IO复用模型，自己封装了一个简单的AeEvent事件处理框架，主要实现了epoll、kqueue和select，对于单纯只有IO操作来说，单线程可以将速度优势发挥到最大，但是Redis也提供了一些简单的计算功能，比如排序、聚合等，对于这些操作，单线程模型实际会严重影响整体吞吐量，CPU计算过程中，整个IO调度都是被阻塞住的。
+> 2. 内存管理方面
+> - Memcached使用预分配的内存池的方式，使用slab和大小不同的chunk来管理内存，Item根据大小选择合适的chunk存储，内存池的方式可以省去申请/释放内存的开销，并且能减小内存碎片产生，但这种方式也会带来一定程度上的空间浪费，并且在内存仍然有很大空间时，新的数据也可能会被剔除，原因可以参考Timyang的文章：http://timyang.net/data/Memcached-lru-evictions/
+
+> - Redis使用现场申请内存的方式来存储数据，并且很少使用free-list等方式来优化内存分配，会在一定程度上存在内存碎片，Redis跟据存储命令参数，会把带过期时间的数据单独存放在一起，并把它们称为临时数据，非临时数据是永远不会被剔除的，即便物理内存不够，导致swap也不会剔除任何非临时数据（但会尝试剔除部分临时数据），这点上Redis更适合作为存储而不是cache。
+
+> 3. 数据一致性问题
+> - Memcached提供了cas命令，可以保证多个并发访问操作同一份数据的一致性问题。 Redis没有提供cas 命令，并不能保证这点，不过Redis提供了事务的功能，可以保证一串 命令的原子性，中间不会被任何操作打断。
+
+> 4. 存储方式及其它方面
+> - Memcached基本只支持简单的key-value存储，不支持枚举，不支持持久化和复制等功能
+
+> - Redis除key/value之外，还支持list,set,sorted set,hash等众多数据结构，提供了KEYS进行枚举操作，但不能在线上使用，如果需要枚举线上数据，Redis提供了工具可以直接扫描其dump文件，枚举出所有数据，Redis还同时提供了持久化和复制等功能。
+> 5. 关于不同语言的客户端支持
+> - 在不同语言的客户端方面，Memcached和Redis都有丰富的第三方客户端可供选择，不过因为Memcached发展的时间更久一些，目前看在客户端支持方面，Memcached的很多客户端更加成熟稳定，而Redis由于其协议本身就比Memcached复杂，加上作者不断增加新的功能等，对应第三方客户端跟进速度可能会赶不上，有时可能需要自己在第三方客户端基础上做些修改才能更好的使用。
+
+- redis 为什么是单线程的？
+> https://blog.csdn.net/chenyao1994/article/details/79491337
+
+> 我们首先要明白，上边的种种分析，都是为了营造一个Redis很快的氛围！官方FAQ表示，因为Redis是基于内存的操作，CPU不是Redis的瓶颈，Redis的瓶颈最有可能是机器内存的大小或者网络带宽。既然单线程容易实现，而且CPU不会成为瓶颈，那就顺理成章地采用单线程的方案了（毕竟采用多线程会有很多麻烦！）。
+- Redis为什么这么快？
+> 1. 完全基于内存，绝大部分请求是纯粹的内存操作，非常快速。数据存在内存中，类似于HashMap，HashMap的优势就是查找和操作的时间复杂度都是O(1)；
+> 2. 数据结构简单，对数据操作也简单，Redis中的数据结构是专门进行设计的；
+> 3. 采用单线程，避免了不必要的上下文切换和竞争条件，也不存在多进程或者多线程导致的切换而消耗 CPU，不用去考虑各种锁的问题，不存在加锁释放锁操作，没有因为可能出现死锁而导致的性能消耗；
+> 4. 使用多路I/O复用模型，非阻塞IO；
+> 5. 使用底层模型不同，它们之间底层实现方式以及与客户端之间通信的应用协议不一样，Redis直接自己构建了VM 机制 ，因为一般的系统调用系统函数的话，会浪费一定的时间去移动和请求；
+> 6. 多路 I/O 复用模型
+
+> 6.1 多路I/O复用模型是利用 select、poll、epoll 可以同时监察多个流的 I/O 事件的能力，在空闲的时候，会把当前线程阻塞掉，当有一个或多个流有 I/O 事件时，就从阻塞态中唤醒，于是程序就会轮询一遍所有的流（epoll 是只轮询那些真正发出了事件的流），并且只依次顺序的处理就绪的流，这种做法就避免了大量的无用操作。
+
+> 6.2 这里“多路”指的是多个网络连接，“复用”指的是复用同一个线程。采用多路 I/O 复用技术可以让单个线程高效的处理多个连接请求（尽量减少网络 IO 的时间消耗），且 Redis 在内存中操作数据的速度非常快，也就是说内存内的操作不会成为影响Redis性能的瓶颈，主要由以上几点造就了 Redis 具有很高的吞吐量。
+
+> epoll 详解？
+> https://blog.csdn.net/u011671986/article/details/79449853
+
+- 关于缓存你需要知道的？
+> https://www.jianshu.com/p/3c111e4719b8
+> - **缓存穿透**,缓存穿透是说访问一个缓存中没有的数据，但是这个数据数据库中也不存在。普通思路下我们没有从数据库中拿到数据是不会触发加缓存操作的。这时如果是有人恶意攻击，大量的访问就会透过缓存直接打到数据库，对后端服务和数据库做成巨大的压力甚至宕机。
+解决方案：
+
+> 1. 缓存空对象。如果缓存未命中，而数据库中也没有这个对象，则可以缓存一个空对象到缓存。如果使用Redis，这种key需设置一个较短的时间，以防内存浪费。
+> 2. 缓存预测。预测key是否存在。如果缓存的量不大可以使用hash来判断，如果量大可以使用布隆过滤器来做判断。
+> - **缓存并发**,缓存并发这个场景很容易解释：多个客户端同时访问一个没有在cache中的数据，这时每个客户端都会执行从DB加载数据set到缓存，就会造成缓存并发。
+> 1. 缓存预热。提前把所有预期的热数据加到缓存。定位热数据还是比较复杂的事情，需要根据自己的服务访问情况去评估。这个方案只能减轻缓存并发的发生次数不能全部抵制。
+> 2. 缓存加锁。 如果多个客户端访问不存在的缓存时，在执行加载数据并set缓存这个逻辑之前先加锁，只能让一个客户端执行这段逻辑。
+> - **缓存防雪崩**
+>  如果缓存集中在一段时间内失效，发生大量的缓存穿透，所有的查询都落在数据库上，造成了缓存雪崩。缓存雪崩是缓存服务暂时不能提供服务，导致所有的请求都直接访问DB。
+> 1. 构建高可用的缓存系统。目前常用的缓存系统Redis和Memcache都支持高可用的部署方式，所以部署的时候不防先考虑是否要以高可用的集群方式部署。
+> 2. 限流。Netflix的Hystrix是非常不错的工具，在用缓存时不妨搭配它来使用。
+
+- 缓存更新的套路？
+> https://coolshell.cn/articles/17416.html
+- Redis支持的Java客户端都有哪些？官方推荐用哪个？
+> Redisson,Jedis，lettuce等等，官方推荐使用Redisson。
+- Jedis与Redisson对比？
+> https://www.jianshu.com/p/bc0ca84cf3ba
+> 1. Jedis是Redis的Java实现的客户端，其API提供了比较全面的Redis命令的支持；Redisson实现了分布式和可扩展的Java数据结构，和Jedis相比，功能较为简单，不支持字符串操作，不支持排序、事务、管道、分区等Redis特性。Redisson的宗旨是促进使用者对Redis的关注分离，从而让使用者能够将精力更集中地放在处理业务逻辑上。
+> 2. Jedis中的方法调用是比较底层的暴露的Redis的API，也即Jedis中的Java方法基本和Redis的API保持着一致，了解Redis的API，也就能熟练的使用Jedis。而Redisson中的方法则是进行比较高的抽象，每个方法调用可能进行了一个或多个Redis方法调用。
+> 3. Jedis使用阻塞的I/O，且其方法调用都是同步的，程序流需要等到sockets处理完I/O才能执行，不支持异步。Jedis客户端实例不是线程安全的，所以需要通过连接池来使用Jedis。Redisson使用非阻塞的I/O和基于Netty框架的事件驱动的通信层，其方法调用是异步的。Redisson的API是线程安全的，所以可以操作单个Redisson连接来完成各种操作。
+> 4. Jedis仅支持基本的数据类型如：String、Hash、List、Set、Sorted Set。Redisson不仅提供了一系列的分布式Java常用对象，基本可以与Java的基本数据结构通用，还提供了许多分布式服务，其中包括（BitSet, Set, Multimap, SortedSet, Map, List, Queue, BlockingQueue, Deque, BlockingDeque, Semaphore, Lock, AtomicLong, CountDownLatch, Publish / Subscribe, Bloom filter, Remote service, Spring cache, Executor service, Live Object service, Scheduler service）。
+- 缓存穿透，缓存击穿，缓存雪崩解决方案分析？
+> https://www.cnblogs.com/williamjie/p/9394229.html
+
+- 分布式之数据库和缓存双写一致性方案解析?
+> https://www.cnblogs.com/williamjie/p/9394201.html
+
+> https://www.cnblogs.com/williamjie/p/9394197.html
+
+- redis持久化的几种方式？
+> https://www.cnblogs.com/AndyAo/p/8135980.html
+> 1. Redis是一种高级key-value数据库。它跟memcached类似，不过数据可以持久化，而且支持的数据类型很丰富。有字符串，链表，集 合和有序集合。支持在服务器端计算集合的并，交和补集(difference)等，还支持多种排序功能。所以Redis也可以被看成是一个数据结构服务器。
+> 2. **AOF**，Redis的所有数据都是保存在内存中，然后不定期的通过异步方式保存到磁盘上(这称为“半持久化模式”)；也可以把每一次数据变化都写入到一个append only file(aof)里面(这称为“全持久化模式”)。 
+
+> 3. **RDB**，由于Redis的数据都存放在内存中，如果没有配置持久化，redis重启后数据就全丢失了，于是需要开启redis的持久化功能，将数据保存到磁 盘上，当redis重启后，可以从磁盘中恢复数据。redis提供两种方式进行持久化，一种是RDB持久化（原理是将Reids在内存中的数据库记录定时 dump到磁盘上的RDB持久化），另外一种是AOF（append only file）持久化（原理是将Reids的操作日志以追加的方式写入文件）。那么这两种持久化方式有什么区别呢，改如何选择呢？网上看了大多数都是介绍这两 种方式怎么配置，怎么使用，就是没有介绍二者的区别，在什么应用场景下使用。
+
+> 4. RDB持久化是指在指定的时间间隔内将内存中的数据集快照写入磁盘，实际操作过程是fork一个子进程，先将数据集写入临时文件，写入成功后，再替换之前的文件，用二进制压缩存储。
+> 5. AOF持久化以日志的形式记录服务器所处理的每一个写、删除操作，查询操作不会记录，以文本的方式记录，可以打开文件看到详细的操作记录。
+> 6. **混合模式（4.0版本支持）(AOF+RDB)**，aof在rewrite的时候把rdb写入到文件开头，之后写入的依旧是aof格式，解决了 aof 恢复慢，rdb写入时间间隔的问题。
+
+```
+RDB持久化配置
+Redis会将数据集的快照dump到dump.rdb文件中。此外，我们也可以通过配置文件来修改Redis服务器dump快照的频率，在打开6379.conf文件之后，我们搜索save，可以看到下面的配置信息：
+save 900 1              #在900秒(15分钟)之后，如果至少有1个key发生变化，则dump内存快照。
+save 300 10            #在300秒(5分钟)之后，如果至少有10个key发生变化，则dump内存快照。
+save 60 10000        #在60秒(1分钟)之后，如果至少有10000个key发生变化，则dump内存快照。
+
+AOF持久化配置
+在Redis的配置文件中存在三种同步方式，它们分别是：
+appendfsync always     #每次有数据修改发生时都会写入AOF文件。
+appendfsync everysec  #每秒钟同步一次，该策略为AOF的缺省策略。
+appendfsync no          #从不同步。高效但是数据不会被持久化。
+```
+- 如何优雅地用Redis实现分布式锁?
+> https://www.cnblogs.com/linjiqin/p/8003838.html
+> https://yq.aliyun.com/articles/630496?utm_content=m_1000014601
+> 1. 加锁: `SET my_key my_value NX PX milliseconds`，NX为**IF NOT EXIST**，如果my_key不存在，PX：**EXPIRES TIME**，设置mey_key的值为my_value。 my_value应该为一个全局唯一的id值，用于释放锁。
+> 2. 释放锁: `if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end`
+```
+String script = "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end";
+Object result = jedis.eval(script, Collections.singletonList(lockKey), Collections.singletonList(requestId));
+```
+- 对比各类分布式锁缺陷，抓住Redis分布式锁实现命门?
+> https://blog.51cto.com/14208181/2354921
+- 如何redis 如何做内存优化？
+> 1. 合理设置内部编码配置参数
+> 2. 使用32位Redis实例
+> 3. 尽可能的使用hash数据结构
+> 4. 减少key的数量
+
+- Redis缓存淘汰策略？
+> - 驱逐策略
+> 1. noeviction: 不删除策略, 达到最大内存限制时, 如果需要更多内存, 直接返回错误信息。 大多数写命令都会导致占用更多的内存(有极少数会例外, 如 DEL )。
+> 2. allkeys-lru: 所有key通用; 优先删除最近最少使用(less recently used ,LRU) 的 key。
+> 3. volatile-lru: 只限于设置了 expire 的部分; 优先删除最近最少使用(less recently used ,LRU) 的 key。
+> 4. allkeys-random: 所有key通用; 随机删除一部分 key。
+> 5. volatile-random: 只限于设置了 expire 的部分; 随机删除一部分 key。
+> 6. volatile-ttl: 只限于设置了 expire 的部分; 优先删除剩余时间(time to live,TTL) 短的key。\
+- Redis 常见的性能问题和解决方法？
+> 1. Master写内存快照，save命令调度rdbSave函数，会阻塞主线程的工作，当快照比较大时对性能影响是非常大的，会间断性暂停服务，所以Master最好不要写内存快照。
+> 2. Master AOF持久化，如果不重写AOF文件，这个持久化方式对性能的影响是最小的，但是AOF文件会不断增大，AOF文件过大会影响Master重启的恢复速度。
+> 3. Master调用BGREWRITEAOF，Master调用BGREWRITEAOF重写AOF文件，AOF在重写的时候会占大量的CPU和内存资源，导致服务load过高，出现短暂服务暂停现象。
+> 4. Redis主从复制的性能问题，第一次Slave向Master同步的实现是：Slave向Master发出同步请求，Master先dump出rdb文件，然后将rdb文件全量传输给slave，然后Master把缓存的命令转发给Slave，初次同步完成。第二次以及以后的同步实现是：Master将变量的快照直接实时依次发送给各个Slave。不管什么原因导致Slave和Master断开重连都会重复以上过程。Redis的主从复制是建立在内存快照的持久化基础上，只要有Slave就一定会有内存快照发生。虽然Redis宣称主从复制无阻塞，但由于Redis使用单线程服务，如果Master快照文件比较大，那么第一次全量传输会耗费比较长时间，且文件传输过程中Master可能无法提供服务，也就是说服务会中断，对于关键服务，这个后果也是很可怕的。
+> 5. 单点故障问题，由于目前Redis的主从复制还不够成熟，所以存在明显的单点故障问题，这个目前只能自己做方案解决，如：主动复制，Proxy实现Slave对Master的替换等，这个也是Redis作者目前比较优先的任务之一，作者的解决方案思路简单优雅，详情可见 Redis Sentinel design draft http://redis.io/topics/sentinel-spec。
+```
+Master最好不要做任何持久化工作，包括内存快照和AOF日志文件，特别是不要启用内存快照做持久化。
+如果数据比较关键，某个Slave开启AOF备份数据，策略为每秒同步一次。
+为了主从复制的速度和连接的稳定性，Slave和Master最好在同一个局域网内。
+尽量避免在压力较大的主库上增加从库
+为了Master的稳定性，主从复制不要用图状结构，用单向链表结构更稳定，即主从关系为：Master<–Slave1<–Slave2<–Slave3…….，这样的结构也方便解决单点故障问题，实现Slave对Master的替换，也即，如果Master挂了，可以立马启用Slave1做Master，其他不变。
+```
+
+# JVM
+- JVM内存分为哪几部分?各个部分的作用是什么?
+> - Java虚拟机内存的五大区域
+> 1. 堆。 堆是Java对象的存储区域，任何用new字段分配的Java对象实例和数组，都被分配在堆上，Java堆可使用-Xms -Xmx进行内存控制，值得一提的是从JDK1.7版本之后，运行时常量池从方法区移到了堆上。
+> 2. 方法区。它用于存储已被虚拟机加载的类信息，常量，静态变量，即时编译器编译后的代码等数据，方法区在JDK1.7版本及以前被称为永久代，从JDK1.8永久代被移除。
+> 3. 虚拟机栈。虚拟机栈中执行每个方法的时候，都会创建一个栈帧用于存储局部变量表，操作数栈，动态链接，方法出口等信息。
+> 4. 本地方法栈。与虚拟机栈发挥的作用相似，相比于虚拟机栈为Java方法服务，本地方法栈为虚拟机使用的Native方法服务，执行每个本地方法的时候，都会创建一个栈帧用于存储局部变量表，操作数栈，动态链接，方法出口等信息。
+> 5. 程序计数器。指示Java虚拟机下一条需要执行的字节码指令。 
+
+> - 以上五个区域是Java虚拟机内存划分情况，其中方法区和堆被JVM中多个线程共享，比如类的静态常量就被存放在方法区，供类对象之间共享，虚拟机栈，本地方法栈，pc寄存器是每个线程独立拥有的，不会与其他线程共享。 所以Java在通过new创建一个类对象实例的时候，一方面会在虚拟机栈中创建一个该对象的引用，另一方面会在堆上创建类对象的实例，然后将对象引用指向该对象的实例。对象引用存放在每一个方法对应的栈帧中。
+
+> https://blog.csdn.net/yetaoii/article/details/79807336
+- Java虚拟机（JVM）你只要看这一篇就够了！
+> https://blog.csdn.net/qq_41701956/article/details/81664921
+
+> https://www.cnblogs.com/good-temper/p/3583660.html
+- 说一下JVM入门——运行时数据区？
+> http://www.cnblogs.com/yulinfeng/p/7153391.html
+- 堆和栈的概念和区别
+> https://blog.csdn.net/pt666/article/details/70876410/
+> 1. 栈内存存储的是局部变量而堆内存存储的是实体；
+> 2. 栈内存的更新速度要快于堆内存，因为局部变量的生命周期很短；
+> 3. 栈内存存放的变量生命周期一旦结束就会被释放，而堆内存存放的实体会被垃圾回收机制不定时的回收。
+
+- 队列和栈有什么区别？
+> 1. 操作的名称不同。队列的插入称为入队，队列的删除称为出队。栈的插入称为进栈，栈的删除称为出栈。
+> 2. 可操作的方式不同。队列是在队尾入队，队头出队，即两边都可操作。而栈的进栈和出栈都是在栈顶进行的，无法对栈底直接进行操作。
+> 3. 操作的方法不同。队列是先进先出（FIFO），即队列的修改是依先进先出的原则进行的。新来的成员总是加入队尾（不能从中间插入），每次离开的成员总是队列头上（不允许中途离队）。而栈为后进先出（LIFO）,即每次删除（出栈）的总是当前栈中最新的元素，即最后插入（进栈）的元素，而最先插入的被放在栈的底部，要到最后才能删除。
+
+- 类加载机制和双亲委派模型？
+> https://blog.csdn.net/aimashi620/article/details/84836245
+
+> https://blog.csdn.net/w372426096/article/details/81901482
+
+> https://www.cnblogs.com/doit8791/p/5820037.html
+
+- 说一下类加载的执行过程？
+> https://blog.csdn.net/jintao_ma/article/details/51353453
+> 1. **加载**，通过“类全名”来获取定义此类的二进制字节流，将字节流所代表的静态存储结构转换为方法区的运行时数据结构，在java堆中生成一个代表这个类的java.lang.Class对象，作为方法区这些数据的访问入口。
+> 2. **验证**，验证是链接阶段的第一步，这一步主要的目的是确保class文件的字节流中包含的信息符合当前虚拟机的要求，并且不会危害虚拟机自身安全。
+验证阶段主要包括四个检验过程：文件格式验证、元数据验证、字节码验证和符号引用验证。
+> 3. **准备**，准备阶段是正式为类变量分配内存并设置类变量初始值的阶段，这些内存都将在方法区中进行分配。这个阶段中有两个容易产生混淆的知识点，首先是这时候进行内存分配的仅包括类变量(static 修饰的变量),而不包括实例变量，实例变量将会在对象实例化时随着对象一起分配在java堆中。其次是这里所说的初始值“通常情况”下是数据类型的零值。
+> 4. **解析**，解析阶段是虚拟机常量池内的符号引用替换为直接引用的过程。
+> 5. **初始化**，类的初始化阶段是类加载过程的最后一步，在准备阶段，类变量已赋过一次系统要求的初始值，而在初始化阶段，则是根据程序员通过程序制定的主观计划去初始化类变量和其他资源，或者可以从另外一个角度来表达：初始化阶段是执行类构造器<clinit>()方法的过程。
+
+- 怎么判断对象是否可以被回收？
+> 1. **引用计数法**，给每一个对象添加一个引用计数器，每次引用计数器就加1，当引用失效的时候就减1，当计数器的值为0的时候，就可以对该对象进行回收。
+> 2. **可达性分析算法**，将一系列的gc roots对象作为起始点，从这些节点向下搜索，搜索走过的路径称为是引用链，当gc roots对象到一个对象没有引用链的时候，称为这个对象是不可达的，此对象是不可用的，就可以进行回收。
+> - 虚拟机栈中引用的对象
+> - 方法区中类静态属性引用的对象
+> - 方法区中常量引用的对象
+> - 本地方法栈中JNI[即一般说的Native]引用的对象
+
+- java 中都有哪些引用类型？
+> 1. **StrongReference(强引用)**，`Test test = new Test()`,这是最常见的引用类型，也是最牢固的引用类型，当jvm发生gc时，对象被引用不会被gc回收，jvm内存满了将要发生OOM（out of memory）的时候，强引用类型也不会被回收
+> 2. **SoftReference(软引用)**，`SoftReference<String> softReference = new SoftReference<>(new String("Hello World"));`,较强引用来说，软引用在发生gc时，被引用的对象不会被回收，当内存满时，将要发生OOM时，gc会回收软引用的对象
+> 3. **WeakReference(弱引用)**,`WeakReference<String> weakReference = new WeakReference<>(new String("Hello World"));`,弱引用在发生gc时，就会被gc回收，不管内存用了多少，弱引用最长的生命周期是两次gc的间隔时间。
+> 4. **PhantomReference(虚引用，幻引用)**,`ReferenceQueue<String> referenceQueue = new ReferenceQueue<>(); 
+PhantomReference<String> phantomReference = new PhantomReference<>(new String("Hello World"), referenceQueue);`,虚引用和上面两种引用有一点点小区别，多了一个依赖队列。虚引用并不会决定对象的生命周期，有他没他都一个样，无法通过虚引用获取对象。
+> 5. **引用队列（ReferenceQueue）**,引用队列可以与软引用、弱引用以及虚引用一起配合使用，当垃圾回收器准备回收一个对象时，如果发现它还有引用，那么就会在回收对象之前，把这个引用加入到与之关联的引用队列中去。程序可以通过判断引用队列中是否已经加入了引用，来判断被引用的对象是否将要被垃圾回收，这样就可以在对象被回收之前采取一些必要的措施。与软引用、弱引用不同，虚引用必须和引用队列一起使用。
+
+- 说一下 jvm 有哪些垃圾回收算法？
+> http://www.cnblogs.com/yulinfeng/p/7163052.html
+> 1. 标记-清除算法
+
+> 等待被回收对象的“标记”过程在上文已经提到过，如果在被标记后直接对对象进行清除，会带来另一个新的问题——内存碎片化。如果下次有比较大的对象实例需要在堆上分配较大的内存空间时，可能会出现无法找到足够的连续内存而不得不再次触发垃圾回收。
+> 2. 复制算法
+
+> 此GC算法实际上解决了标记-清除算法带来的“内存碎片化”问题。首先还是先标记处待回收内存和不用回收的内存，下一步将不用回收的内存复制到新的内存区域，这样旧的内存区域就可以全部回收，而新的内存区域则是连续的。它的缺点就是会损失掉部分系统内存，因为你总要腾出一部分内存用于复制。
+
+> 在上文《JVM入门——运行时数据区》提到过在Java堆中被分为了新生代和老年代，这样的划分是方便GC。Java堆中的新生代就使用了GC复制算法。在新生代中又分为了三个区域：Eden 空间、To Survivor空间、From Survivor空间。不妨将注意力回到这张图的左边新生代部分：
+![image](https://images2015.cnblogs.com/blog/630246/201707/630246-20170713203325103-321422084.png)
+
+> 新的对象实例被创建的时候通常在Eden空间，发生在Eden空间上的GC称为Minor GC，当在新生代发生一次GC后，会将Eden和其中一个Survivor空间的内存复制到另外一个Survivor中，如果反复几次有对象一直存活，此时内存对象将会被移至老年代。可以看到新生代中Eden占了大部分，而两个Survivor实际上占了很小一部分。这是因为大部分的对象被创建过后很快就会被GC（这里也许运用了是二八原则）。
+> 3. 标记-整理(压缩)算法
+
+> 对于新生代，大部分对象都不会存活，所以在新生代中使用复制算法较为高效，而对于老年代来讲，大部分对象可能会继续存活下去，如果此时还是利用复制算法，效率则会降低。标记-压缩算法首先还是“标记”，标记过后，将不用回收的内存对象压缩到内存一端，此时即可直接清除边界处的内存，这样就能避免复制算法带来的效率问题，同时也能避免内存碎片化的问题。老年代的垃圾回收称为“Major GC”。
+
+> 4. 分代收集算法
+
+> 分代收集算法是目前大部分JVM的垃圾收集器采用的算法。它的核心思想是根据对象存活的生命周期将内存划分为若干个不同的区域。一般情况下将堆区划分为老年代（Tenured Generation）和新生代（Young Generation），在堆区之外还有一个代就是永久代（Permanet Generation）。老年代的特点是每次垃圾收集时只有少量对象需要被回收，而新生代的特点是每次垃圾回收时都有大量的对象需要被回收，那么就可以根据不同代的特点采取最适合的收集算法。
+
+- 说一下 jvm 有哪些垃圾回收器？
+> https://www.cnblogs.com/aspirant/p/8662690.html
+> 1. Serial收集器（复制算法)
+新生代单线程收集器，标记和清理都是单线程，优点是简单高效。是client级别默认的GC方式，可以通过-XX:+UseSerialGC来强制指定。
+
+> 2. Serial Old收集器(标记-整理算法)
+老年代单线程收集器，Serial收集器的老年代版本。
+
+> 3. ParNew收集器(停止-复制算法)　
+新生代收集器，可以认为是Serial收集器的多线程版本,在多核CPU环境下有着比Serial更好的表现。
+
+> 4. Parallel Scavenge收集器(停止-复制算法)
+并行收集器，追求高吞吐量，高效利用CPU。吞吐量一般为99%， 吞吐量= 用户线程时间/(用户线程时间+GC线程时间)。适合后台应用等对交互相应要求不高的场景。是server级别默认采用的GC方式，可用-XX:+UseParallelGC来强制指定，用-XX:ParallelGCThreads=4来指定线程数。
+
+> 5. Parallel Old收集器(停止-复制算法)
+Parallel Scavenge收集器的老年代版本，并行收集器，吞吐量优先。
+
+> 6. CMS(Concurrent Mark Sweep)收集器（标记-清理算法）
+高并发、低停顿，追求最短GC回收停顿时间，cpu占用比较高，响应时间快，停顿时间短，多核cpu 追求高响应时间的选择。
+
+> 7. CMS 和G1的垃圾回收器的原理，阿里的面试官也问过，我专门做了专题：
+> - [图解 CMS 垃圾回收机制原理，-阿里面试题](http://www.cnblogs.com/aspirant/p/8663911.html)
+> - [CMS收集器和G1收集器优缺点](http://www.cnblogs.com/aspirant/p/8663897.html)
+> - [G1 垃圾收集器入门](http://www.cnblogs.com/aspirant/p/8663872.html)
+
+- GC是什么时候触发的？
+> - Scavenge GC
+
+>  一般情况下，当新对象生成，并且在Eden申请空间失败时，就会触发Scavenge GC，对Eden区域进行GC，清除非存活对象，并且把尚且存活的对象移动到Survivor区。然后整理Survivor的两个区。这种方式的GC是对年轻代的Eden区进行，不会影响到年老代。因为大部分对象都是从Eden区开始的，同时Eden区不会分配的很大，所以Eden区的GC会频繁进行。因而，一般在这里需要使用速度快、效率高的算法，使Eden去能尽快空闲出来。
+
+> - Full GC
+
+> 对整个堆进行整理，包括Young、Tenured和Perm。Full GC因为需要对整个堆进行回收，所以比Scavenge GC要慢，因此应该尽可能减少Full GC的次数。在对JVM调优的过程中，很大一部分工作就是对于Full GC的调节。有如下原因可能导致Full GC：
+> 1. 年老代（Tenured）被写满；
+> 2. 持久代（Perm）被写满；
+> 3. System.gc()被显示调用；
+> 4. 上一次GC之后Heap的各域分配策略动态变化；
+- 详细介绍一下 CMS 垃圾回收器？
+> https://blog.csdn.net/mc90716/article/details/80158138
+
+- 新生代垃圾回收器和老生代垃圾回收器都有哪些？有什么区别？
+> https://blog.csdn.net/u014421556/article/details/51744614
+
+- 简述分代垃圾回收器是怎么工作的？
+> https://blog.csdn.net/jiang_zf/article/details/79436620
+
+- 说一下 jvm 调优的工具？
+> https://www.cnblogs.com/wxisme/p/9878494.html
+> - jps,java版的ps命令，查看java进程及其相关的信息，如果你想找到一个java进程的pid，那可以用jps命令替代linux中的ps命令了，简单而方便。
+> - jinfo,jinfo是用来查看JVM参数和动态修改部分JVM参数的命令
+> - jstat,jstat命令是使用频率比较高的命令，主要用来查看JVM运行时的状态信息，包括内存状态、垃圾回收等。
+> - jstack,jstack是用来查看JVM线程快照的命令，线程快照是当前JVM线程正在执行的方法堆栈集合。使用jstack命令可以定位线程出现长时间卡顿的原因，例如死锁，死循环等。jstack还可以查看程序崩溃时生成的core文件中的stack信息。
+> - jmap,jmap是用来生成堆dump文件和查看堆相关的各类信息的命令，例如查看finalize执行队列，heap的详细信息和使用情况。
+> - jhat,jhat是用来分析jmap生成dump文件的命令，jhat内置了应用服务器，可以通过网页查看dump文件分析结果，jhat一般是用在离线分析上。
+> - jconsole, jvisualvm,图形工具分析，内存，cpu，堆栈等
+
+- 常用的 jvm 调优的参数都有哪些？
+> https://cloud.tencent.com/developer/article/1198524
+> https://blog.csdn.net/evane1890/article/details/78941968
+```
+-Xms：初始堆大小，默认为物理内存的1/64(<1GB)；默认(MinHeapFreeRatio参数可以调整)空余堆内存小于40%时，JVM就会增大堆直到-Xmx的最大限制
+-Xmx：最大堆大小，默认(MaxHeapFreeRatio参数可以调整)空余堆内存大于70%时，JVM会减少堆直到 -Xms的最小限制
+-Xmn：新生代的内存空间大小，注意：此处的大小是（eden+ 2 survivor space)。与jmap -heap中显示的New gen是不同的。整个堆大小=新生代大小 + 老生代大小 + 永久代大小。
+      在保证堆大小不变的情况下，增大新生代后,将会减小老生代大小。此值对系统性能影响较大,Sun官方推荐配置为整个堆的3/8。
+-XX:SurvivorRatio：新生代中Eden区域与Survivor区域的容量比值，默认值为8。两个Survivor区与一个Eden区的比值为2:8,一个Survivor区占整个年轻代的1/10。
+-Xss：每个线程的堆栈大小。JDK5.0以后每个线程堆栈大小为1M,以前每个线程堆栈大小为256K。应根据应用的线程所需内存大小进行适当调整。在相同物理内存下,
+      减小这个值能生成更多的线程。但是操作系统对一个进程内的线程数还是有限制的，不能无限生成，经验值在3000~5000左右。一般小的应用， 如果栈不是很深， 应该是128k够用的，
+      大的应用建议使用256k。这个选项对性能影响比较大，需要严格的测试。和threadstacksize选项解释很类似,官方文档似乎没有解释,
+      在论坛中有这样一句话:"-Xss is translated in a VM flag named ThreadStackSize”一般设置这个值就可以了。
+-XX:PermSize：设置永久代(perm gen)初始值。默认值为物理内存的1/64。
+-XX:MaxPermSize：设置持久代最大值。物理内存的1/4。
+```
