@@ -461,7 +461,7 @@ ServiceB {
 > 在上面的1，将开起新事务A，2的时候会插入数据，此时事务A挂起，没有commit，3的时候，使用**PROPAGATION_NESTED**传播，将在3点的时候新建一个savepoint保存2插入的数据，不提交。
 > 1. 如果methodB出现异常，将回滚4的操作，不影响2的操作，同时可以处理后面的5,6逻辑，最后一起commit: 2,5,6
 > 2. 如果methodB没有出现异常，那么将一起commit: 2,4,6。
-> 3. 假如methodB使用的**PROPAGATION_REQUIRES_NEW**，那么B异常，会commit: 2,5,6，和NESTED一致，如果methodB没有出现异常，那么会先commit4，再commit:6，那么事务将分离开，不能保持一致，假如执行6报错，2和6将回滚，而4确没有被回滚。
+> 3. 假如methodB使用的**PROPAGATION_REQUIRES_NEW**，那么B异常，会commit: 2,5,6，和NESTED一致，如果methodB没有出现异常，那么会先commit4，再commit:6，那么事务将分离开，不能保持一致，假如执行6报错，2和6将回滚，而4却没有被回滚，不能达到预期效果。
 - 说一下SpringMVC处理请求流程？
 > https://blog.csdn.net/qq_31279347/article/details/82462421
 > https://blog.csdn.net/zhangjun665635/article/details/71122989
