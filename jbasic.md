@@ -1,5 +1,7 @@
 - https://github.com/Snailclimb/JavaGuide
 - https://www.cnblogs.com/over/p/10468747.html
+- https://blog.csdn.net/u011665991/article/details/89206148
+- https://blog.csdn.net/weixin_41607887/article/details/88803193
 # 基础
 - JDK 和 JRE 有什么区别？
 > JDK是面向开发者的工具包,包含jre以及其他的更多的像编译javac以及java性能方面的工具比如jconsole，jstat等。JRE是java运行时环境，没有多余的依赖，精简小巧，包括了java运行的java虚拟机，基础类库等。
@@ -69,7 +71,7 @@ public String reverseStringRecur(String str) {
 - 常见的非线程安全集合类有哪些？
 - ArrayList,LinkedList,HashMap,HashSet,TreeMap,TreeSet,StringBuilder
 - TreeMap实现原理？
-> 有序的红黑树结构
+> 有序的红黑树结构，遍历使用的时候后续遍历，root在后
 > 1. https://blog.csdn.net/chenssy/article/details/26668941
 > 2. https://my.oschina.net/90888/blog/1626065
 > 3. https://www.cnblogs.com/jeriffe/articles/2433942.html
@@ -123,6 +125,7 @@ public ThreadPoolExecutor(int corePoolSize,
 
 - Java中如何保证线程安全性?
 > - 原子性--Atomic*,通过CAS完成。
+> - https://www.cnblogs.com/skywang12345/p/3514623.html
 > - 原子性--synchronized
 > - 可见性--volatile
 > 1. volatile的可见性是通过内存屏障和禁止重排序实现的
@@ -134,6 +137,19 @@ public ThreadPoolExecutor(int corePoolSize,
 - 多线程锁的升级原理是什么？
 > - https://blog.csdn.net/always_younger/article/details/79462684
 > - https://blog.csdn.net/tjreal/article/details/80548662
+```
+在锁对象的对象头里面有一个 threadid 字段，在第一次访问的时候 threadid 为空，JVM 让其持有偏向锁，并将threadid 设置为其线程 id，再次进入的时候会先判断 threadid 是否尤其线程 id 一致，如果一致则可以直接使用，如果不一致，则升级偏向锁为轻量级锁，通过自旋循环一定次数来获取锁，不会堵塞，执行一定次数之后就会升级为重量级锁，进入堵塞，整个过程就是锁升级的原理。
+
+锁的升级的目的：在 Java 6 之后优化 synchronized 的实现方式，使用了偏向锁升级为轻量级锁再升级到重量级锁的方式，减低了锁带来的性能消耗。
+
+锁升级是为了减低了锁带来的性能消耗。
+--------------------- 
+作者：MrBlackWhite 
+来源：CSDN 
+原文：https://blog.csdn.net/u011665991/article/details/89206148 
+版权声明：本文为博主原创文章，转载请附上博文链接！
+```
+
 - synchronized 原理？
 > synchronized 关键字编译后会在同步块的前后添加上 montorenter 和 monitorexit 两个字节码指令，这两个字节码指令都需要一个指向锁定和解锁对象的 reference，如果指定了同步的对象reference就指向这个对象，如果修饰的是方法，如果是类方法就指向Class对象，如果是实例方法就指向这个实例。
 - synchronized 锁的分类？
@@ -155,6 +171,12 @@ public ThreadPoolExecutor(int corePoolSize,
 - 讲一下ReentrantLock实现原理？
 > ReentrantLock实现Lock接口，内部拥有NonfairSync和FairSync，实现公平锁和非公平锁，公平锁是先进先出的原理，谁先等待锁，谁就在下次先获得锁。Sync实现AQS，内部的线程锁等待使用CAS交换状态和LockSupport进行park(),unpark();
 > - https://blog.csdn.net/u011521203/article/details/80186741
+
+- Java技术之AQS详解
+> AQS是AbstractQueuedSynchronizer的简称。AQS提供了一种实现阻塞锁和一系列依赖FIFO等待队列的同步器的框架，如下图所示。AQS为一系列同步器依赖于一个单独的原子变量（state）的同步器提供了一个非常有用的基础。子类们必须定义改变state变量的protected方法，这些方法定义了state是如何被获取或释放的。鉴于此，本类中的其他方法执行所有的排队和阻塞机制。子类也可以维护其他的state变量，但是为了保证同步，必须原子地操作这些变量。
+
+> https://www.jianshu.com/p/da9d051dcc3d
+
 # 反射
 - 什么是反射？
 > 主要是指程序可以访问、检测和修改它本身状态或行为的一种能力
@@ -175,6 +197,34 @@ public ThreadPoolExecutor(int corePoolSize,
 - 什么是 CSRF 攻击，如何避免？
 > CSRF，跨站请求伪造，用户已经登录B网站，在A网站中，构造一个请求B网站的连接，引导用户访问，访问后A网站后，隐身的就访问了B网站的数据或者请求。
 > - https://www.cnblogs.com/lovesong/p/5233195.html
+
+- session 和 cookie 有什么区别？
+> - 存储位置不同：session 存储在服务器端；cookie 存储在浏览器端。
+> - 安全性不同：cookie 安全性一般，在浏览器存储，可以被伪造和修改。
+> - 容量和个数限制：cookie 有容量限制，每个站点下的 cookie 也有个数限制。
+> - 存储的多样性：session 可以存储在 Redis 中、数据库中、应用程序中；而 cookie 只能存储在浏览器中。
+```
+IE 每个域名限制为50 个。
+Firefox 每个域名cookie 限制为50 个。
+Opera 每个域名cookie 限制为30 个。
+Safari/webkit 貌似没有cookie 限制。但是假如cookie 很多，则会使header 大小超过服务器的处理的限制，导致错误发生。
+不同浏览器间每个cookie 文件大小也不同
+Firefox 和safari 是4097 个字节，包括名（name）、值（value）和等号。
+Opera 是4096 个字节，包括：名（name）、值（value）和等号。
+IE 是4095 个字节，包括：名（name）、值（value）和等号。
+```
+
+- spring mvc 和 struts 的区别是什么？
+
+> - 拦截级别：struts2 是类级别的拦截；spring mvc 是方法级别的拦截。
+> - 数据独立性：spring mvc 的方法之间基本上独立的，独享 request 和 response 数据，请求数据通过参数获取，处理结果通过 ModelMap 交回给框架，方法之间不共享变量；而 struts2 虽然方法之间也是独立的，但其所有 action 变量是共享的，这不会影响程序运行，却给我们编码和读程序时带来了一定的麻烦。
+> - 拦截机制：struts2 有以自己的 interceptor 机制，spring mvc 用的是独立的 aop 方式，这样导致struts2 的配置文件量比 spring mvc 大。
+> - 对 ajax 的支持：spring mvc 集成了ajax，所有 ajax 使用很方便，只需要一个注解 @ResponseBody 就可以实现了；而 struts2 一般需要安装插件或者自己写代码才行。
+
+- 如何避免 sql 注入？
+> 1. 使用预处理 PreparedStatement。
+> 2. 使用正则表达式过滤掉字符中的特殊字符。
+
 # 异常
 - throw 和 throws 的区别？
 > throw是指定抛出异常动作， throws是用于申明异常，不执行抛出异常动作。
@@ -293,6 +343,8 @@ TCP/IP 层级模型结构，应用层之间的协议通过逐级调用传输层�
 > - 抽象工厂模式，在工厂方法模式上扩展，定义一个创建多个对象的抽象类I和多个产品的方法C1,C2,C3，C1,C2,C3创建的也是抽象类型，定义一个抽象类I的实现A，使用的时候分别调用A.C1(),A.C2(),A.C3()。
 > - 工厂方法模式： 只有一个抽象产品类，具体工厂类只能创建一个具体产品类的实例 
 > - 抽象工厂模式： 有多个抽象产品类 ，具体工厂类能创建多个具体产品类的实例
+
+> 单例模式: 懒汉，饿汉，双重校验，静态内部类，枚举
 # Spring
 - 为什么要用Spring？
 > 说到Spring肯定离不开它的两大特性AOP和IOC。
@@ -415,13 +467,24 @@ TCP/IP 层级模型结构，应用层之间的协议通过逐级调用传输层�
 > - 事务的隔离级别
 > https://www.cnblogs.com/huanongying/p/7021555.html
 > 1) read uncommited：是最低的事务隔离级别，它允许另外一个事务可以看到这个事务未提交的数据。
-> 2) read commited：保证一个事物提交后才能被另外一个事务读取。另外一个事务不能读取该事物未提交的数据。
-> 3) repeatable read：这种事务隔离级别可以防止脏读，不可重复读。但是可能会出现幻象读。它除了保证一个事务不能被另外一个事务读取未提交的数据之外还避免了以下情况产生（不可重复读）。
+> 2) read commited：保证一个事物提交后才能被另外一个事务读取。另外一个事务不能读取该事物未提交的数据。**只要是当前语句执行前已经提交的数据都是可见的。**
+> 3) repeatable read：这种事务隔离级别可以防止脏读，不可重复读。但是可能会出现幻象读。它除了保证一个事务不能被另外一个事务读取未提交的数据之外还避免了以下情况产生（不可重复读）。**只要是当前事务执行前已经提交的数据都是可见的**
 > 4) serializable：这是花费最高代价但最可靠的事务隔离级别。事务被处理为顺序执行。除了防止脏读，不可重复读之外，还避免了幻象读
 > 5) 脏读、不可重复读、幻象读概念说明：
-a.脏读：指当一个事务正字访问数据，并且对数据进行了修改，而这种数据还没有提交到数据库中，这时，另外一个事务也访问这个数据，然后使用了这个数据。因为这个数据还没有提交那么另外一个事务读取到的这个数据我们称之为脏数据。依据脏数据所做的操作肯能是不正确的。
-b.不可重复读：指在一个事务内，多次读同一数据。在这个事务还没有执行结束，另外一个事务也访问该同一数据，那么在第一个事务中的两次读取数据之间，由于第二个事务的修改第一个事务两次读到的数据可能是不一样的，这样就发生了在一个事物内两次连续读到的数据是不一样的，这种情况被称为是不可重复读。
-c.幻象读：一个事务先后读取一个范围的记录，但两次读取的纪录数不同，我们称之为幻象读（两次执行同一条 select 语句会出现不同的结果，第二次读会增加一数据行，并没有说这两次执行是在同一个事务中）
+>    - 脏读：指当一个事务正字访问数据，并且对数据进行了修改，而这种数据还没有提交到数据库中，这时，另外一个事务也访问这个数据，然后使用了这个数据。因为这个数据还没有提交那么另外一个事务读取到的这个数据我们称之为脏数据。依据脏数据所做的操作肯能是不正确的。
+>    - 不可重复读：指在一个事务内，多次读同一数据。在这个事务还没有执行结束，另外一个事务也访问该同一数据，那么在第一个事务中的两次读取数据之间，由于第二个事务的修改第一个事务两次读到的数据可能是不一样的，这样就发生了在一个事物内两次连续读到的数据是不一样的，这种情况被称为是不可重复读。
+>    - 幻象读：一个事务先后读取一个范围的记录，但两次读取的纪录数不同，我们称之为幻象读（两次执行同一条 select 语句会出现不同的结果，第二次读会增加一数据行，并没有说这两次执行是在同一个事务中）
+>    - 可重复读,快照读和当前读。https://www.cnblogs.com/TeyGao/p/7846695.html
+>    - Record Lock,Gap Lock,Next-Key Lock
+>    - https://www.cnblogs.com/songwenjie/p/8643684.html
+>    - https://www.cnblogs.com/songwenjie/p/8643684.html
+>    - https://wangxinchun.iteye.com/blog/2341296
+>    - https://www.cnblogs.com/hellopretty/p/5020093.html
+>    - InnoDB存储引擎MVCC的工作原理
+>    - https://my.oschina.net/xinxingegeya/blog/505675
+>    - https://www.colabug.com/5354263.html
+>    - https://blog.csdn.net/u013360850/article/details/86030084
+
 > - 事务几种实现方式
 > 1) 编程式事务管理对基于 POJO 的应用来说是唯一选择。我们需要在代码中调用beginTransaction()、commit()、rollback()等事务管理相关的方法，这就是编程式事务管理。
 > 2) 基于 TransactionProxyFactoryBean的声明式事务管理
@@ -743,6 +806,30 @@ spring.jpa.properties.hibernate.use_sql_comments=true //指出是什么操作生
 集群的启动顺序，必须先启动硬盘节点然后然能启动内存节点（否则无法启动）
 > - 当集群所有节点都停止运行的时候应该按照后停的服务先启动的顺序启动，否则将导致个别节点消息时空错乱
 
+> - RabbitMQ 对集群的停止的顺序是有要求的，应该先关闭内存节点，最后再关闭磁盘节点。如果顺序恰好相反的话，可能会造成消息的丢失。
+
+-  RabbitMQ 集群有什么用？
+> - 高可用：某个服务器出现问题，整个 RabbitMQ 还可以继续使用；
+> = 高容量：集群可以承载更多的消息量。
+- RabbitMQ 节点的类型有哪些？
+> - 磁盘节点：消息会存储到磁盘。
+> - 内存节点：消息都存储在内存中，重启服务器消息丢失，性能高于磁盘类型。
+
+- RabbitMQ 每个节点是其他节点的完整拷贝吗？为什么？
+> 不是(**镜像模式除外**)，原因有以下两个：
+> 1. 存储空间的考虑：如果每个节点都拥有所有队列的完全拷贝，这样新增节点不但没有新增存储空间，反而增加了更多的冗余数据；
+> 2. 性能的考虑：如果每条消息都需要完整拷贝到每一个集群节点，那新增节点并没有提升处理消息的能力，最多是保持和单节点相同的性能甚至是更糟。
+
+- RabbitMQ 集群中唯一一个磁盘节点崩溃了会发生什么情况？
+> - 不能创建队列
+> - 不能创建交换器
+> - 不能创建绑定
+> - 不能添加用户
+> - 不能更改权限
+> - 不能添加和删除集群节点
+> > 唯一磁盘节点崩溃了，集群是可以保持运行的，但你不能更改任何东西。
+
+
 # Kafka
 - kafka 可以脱离 zookeeper 单独使用吗？为什么？
 > 1. kafka单纯只是脱离zookeeper可以吗？
@@ -761,6 +848,22 @@ zookeeper只是个服务注册中心，如果kafka可以找到替代品换掉zoo
 > 因为在一个大文件里查找和删除消息是很费时的事，也容易出错，所以，分区被划分为若干个片段。默认情况下，每个片段包含1G或者一周的数据，以较小的那个为准。在broker往leader分区写入消息时，如果达到片段上限，就关闭当前文件，并打开一个新文件。当前正在写入数据的片段叫活跃片段。当所有片段都被写满时，会清除下一个分区片段的数据，如果配置的是7个片段，每天打开一个新片段，就会删除一个最老的片段，循环使用所有片段。
 - kafka集群搭建注意事项？
 > https://blog.csdn.net/jing_jing0909/article/details/82862541
+- kafka 同时设置了 7 天和 10G 清除数据，到第五天的时候消息达到了 10G，这个时候 kafka 将如何处理？
+> 这个时候 kafka 会执行数据清除工作，时间和大小不论那个满足条件，都会清空数据。
+- 什么情况会导致 kafka 运行变慢？
+> - cpu 性能瓶颈
+> - 磁盘读写瓶颈
+> - 网络瓶颈
+
+- 使用 kafka 集群需要注意什么？
+> - 集群的数量不是越多越好，最好不要超过 7 个，因为节点越多，消息复制需要的时间就越长，整个群组的吞吐量就越低。
+> - 集群数量最好是单数，因为超过一半故障集群就不能用了，设置为单数容错率更高。
+
+- kafka之六：为什么Kafka那么快
+> https://www.cnblogs.com/duanxz/p/4705164.html
+
+- 突发宕机，Kafka写入的数据如何保证不丢失？
+> https://blog.csdn.net/z1941563559/article/details/88797272
 # zookeeper
 - zookeeper 是什么？
 > https://blog.csdn.net/chengxuyuanyonghu/article/details/80403879
@@ -897,6 +1000,11 @@ zookeeper只是个服务注册中心，如果kafka可以找到替代品换掉zoo
 > 2. 海量数据的读写
 > 3. 对扩展性要求高的数据
 
+> - 记录帖子点赞数、点击数、评论数；
+> - 缓存近期热帖；
+> - 缓存文章详情信息；
+> - 记录用户会话信息。
+
 > - 不适场景：
 > 1. 需要事务支持（非关系型数据库）
 > 2. 基于sql结构化查询储存，关系复杂
@@ -907,6 +1015,13 @@ zookeeper只是个服务注册中心，如果kafka可以找到替代品换掉zoo
 > - 集合set
 > - 有序集合zset
 > - hash
+
+> 1. 数据缓存功能
+> 2. 分布式锁的功能
+> 3. 支持数据持久化
+> 4. 支持事务
+> 5. 支持消息队列
+
 
 - Redis与Memcached的比较？
 > 1. 网络IO模型
@@ -976,8 +1091,10 @@ zookeeper只是个服务注册中心，如果kafka可以找到替代品换掉zoo
 
 - 分布式之数据库和缓存双写一致性方案解析?
 > https://www.cnblogs.com/williamjie/p/9394201.html
-
 > https://www.cnblogs.com/williamjie/p/9394197.html
+
+- redis缓存与数据库一致性问题
+> https://www.cnblogs.com/senlinyang/p/8830611.html
 
 - redis持久化的几种方式？
 > https://www.cnblogs.com/AndyAo/p/8135980.html
@@ -1027,7 +1144,7 @@ Object result = jedis.eval(script, Collections.singletonList(lockKey), Collectio
 > 3. volatile-lru: 只限于设置了 expire 的部分; 优先删除最近最少使用(less recently used ,LRU) 的 key。
 > 4. allkeys-random: 所有key通用; 随机删除一部分 key。
 > 5. volatile-random: 只限于设置了 expire 的部分; 随机删除一部分 key。
-> 6. volatile-ttl: 只限于设置了 expire 的部分; 优先删除剩余时间(time to live,TTL) 短的key。\
+> 6. volatile-ttl: 只限于设置了 expire 的部分; 优先删除剩余时间(time to live,TTL) 短的key。
 - Redis 常见的性能问题和解决方法？
 > 1. Master写内存快照，save命令调度rdbSave函数，会阻塞主线程的工作，当快照比较大时对性能影响是非常大的，会间断性暂停服务，所以Master最好不要写内存快照。
 > 2. Master AOF持久化，如果不重写AOF文件，这个持久化方式对性能的影响是最小的，但是AOF文件会不断增大，AOF文件过大会影响Master重启的恢复速度。
@@ -1042,6 +1159,18 @@ Master最好不要做任何持久化工作，包括内存快照和AOF日志文�
 为了Master的稳定性，主从复制不要用图状结构，用单向链表结构更稳定，即主从关系为：Master<–Slave1<–Slave2<–Slave3…….，这样的结构也方便解决单点故障问题，实现Slave对Master的替换，也即，如果Master挂了，可以立马启用Slave1做Master，其他不变。
 ```
 
+- redis 如何做内存优化？
+> 1. 关闭 Redis 的虚拟内存[VM]功能，即 redis.conf 中 vm-enabled = no
+> 2. 设置 redis.conf 中 maxmemory ，用于告知 Redis 当使用了多少物理内存后拒绝继续写入的请求，可防止 Redis 性能降低甚至崩溃
+> 3. 可为指定的数据类型设置内存使用规则，从而提高对应数据类型的内存使用效率
+>   - Hash 在 redis.conf 中有以下两个属性，任意一个超出设定值，则会使用 HashMap 存值
+>       -  hash-max-zipmap-entires 64 表示当 value 中的 map 数量在 64 个以下时，实际使用 zipmap 存储值
+>       - hash-max-zipmap-value 512 表示当 value 中的 map 每个成员值长度小于 512 字节时，实际使用 zipmap 存储值
+>   - List 在 redis.conf 中也有以下两个属性
+>       -  list-max-ziplist-entires 64
+>       -  list-max-ziplist-value 512
+> 4. 在 Redis 的源代码中有一行宏定义 REDIS-SHARED-INTEGERS = 10000 ，修改该值可以改变 Redis 存储数值类型的内存开销
+
 # JVM
 - JVM内存分为哪几部分?各个部分的作用是什么?
 > https://blog.csdn.net/guhong5153/article/details/70196354
@@ -1049,8 +1178,7 @@ Master最好不要做任何持久化工作，包括内存快照和AOF日志文�
 > 1. 堆。 堆是Java对象的存储区域，任何用new字段分配的Java对象实例和数组，都被分配在堆上，Java堆可使用-Xms -Xmx进行内存控制，值得一提的是从JDK1.7版本之后，运行时常量池从方法区移到了堆上。堆内存是 JVM 所有线程共享的部分，在虚拟机启动的时候就已经创建。所有的对象和数组都在堆上进行分配。这部分空间可通过 GC 进行回收。当申请不到空间时会抛出 OutOfMemoryError。
 
 > 2. 方法区。它用于存储已被虚拟机加载的类信息，常量，静态变量，即时编译器编译后的代码等数据，方法区在JDK1.7版本及以前被称为永久代，从JDK1.8永久代被移除。方法区也是所有线程共享。主要用于存储类的信息、常量池、方法数据、方法代码等。方法区逻辑上属于堆的一部分，但是为了与堆进行区分，通常又叫“非堆”。JDK1.8以前，叫做永久代，PermGen。>=1.8，叫做元空间，Metaspace。>=1.7，常量转移到了堆，不在永久代了。
-
-> 2.1 元空间的本质和永久代类似，都是对JVM规范中方法区的实现。不过元空间与永久代之间最大的区别在于：元空间并不在虚拟机中，而是使用本地内存。因此，默认情况下，元空间的大小仅受本地内存限制，但可以通过以下参数来指定元空间的大小：
+>   - 元空间的本质和永久代类似，都是对JVM规范中方法区的实现。不过元空间与永久代之间最大的区别在于：元空间并不在虚拟机中，而是使用本地内存。因此，默认情况下，元空间的大小仅受本地内存限制，但可以通过以下参数来指定元空间的大小：
 ```
 -XX:MetaspaceSize，初始空间大小，达到该值就会触发垃圾收集进行类型卸载，同时GC会对该值进行调整：如果释放了大量的空间，就适当降低该值；如果释放了很少的空间，那么在不超过MaxMetaspaceSize时，适当提高该值。 
 -XX:MaxMetaspaceSize，最大空间，默认是没有限制的。
@@ -1077,10 +1205,27 @@ Master最好不要做任何持久化工作，包括内存快照和AOF日志文�
 > https://blog.csdn.net/yetaoii/article/details/79807336
 - Java虚拟机（JVM）你只要看这一篇就够了！
 > https://blog.csdn.net/qq_41701956/article/details/81664921
-
 > https://www.cnblogs.com/good-temper/p/3583660.html
+- java编译过程（字节码编译和即时编译）
+> https://www.cnblogs.com/straybirds/p/8513870.html
+- 执行引擎(三)：程序编译与代码优化
+> https://www.cnblogs.com/lllllht/p/9184343.html
 - 说一下JVM入门——运行时数据区？
 > http://www.cnblogs.com/yulinfeng/p/7153391.html
+- JVM即时编译（JIT）
+> https://blog.csdn.net/sunxianghuang/article/details/52094859
+
+- 彻底弄懂字符串常量池等相关问题
+> https://www.cnblogs.com/gxyandwmm/p/9495923.html
+```
+intern()函数
+　　intern函数的作用是将对应的符号常量进入特殊处理，在1.6以前 和 1.7以后有不同的处理；
+    
+    在1.6中，intern的处理是 先判断字符串常量是否在字符串常量池中，如果存在直接返回该常量，如果没有找到，则将该字符串常量加入到字符串常量区，也就是在字符串常量区建立该常量；
+    
+    在1.7中，intern的处理是 先判断字符串常量是否在字符串常量池中，如果存在直接返回该常量，如果没有找到，说明该字符串常量在堆中，则处理是把堆区该对象的引用加入到字符串常量池中，以后别人拿到的是该字符串常量的引用，实际存在堆中；【这里感谢以为网友的纠正，一开始理解为在堆区建立该字符串对象在添加引用了，其实调用该方法的字符串对象要么在堆区要么在常量池中的】
+```
+
 - 堆和栈的概念和区别
 > https://blog.csdn.net/pt666/article/details/70876410/
 > 1. 栈内存存储的是局部变量而堆内存存储的是实体；
@@ -1170,6 +1315,50 @@ Parallel Scavenge收集器的老年代版本，并行收集器，吞吐量优先
 > - [CMS收集器和G1收集器优缺点](http://www.cnblogs.com/aspirant/p/8663897.html)
 > - [G1 垃圾收集器入门](http://www.cnblogs.com/aspirant/p/8663872.html)
 
+
+- CMS垃圾回收机制
+> https://www.cnblogs.com/Leo_wl/p/5393300.html
+> https://www.cnblogs.com/littleLord/p/5380624.html
+
+- 垃圾收集器GC中parallel scavenge收集器为什么不能CMS配合使用？
+> https://blog.csdn.net/qq_33915826/article/details/79672772
+
+- Throughtput收集器
+> https://blog.csdn.net/mc90716/article/details/80144473
+
+- 简介JVM的Parallel Scavenge及Parallel Old垃圾收集器
+> https://blog.csdn.net/u010798968/article/details/72867690
+
+- 7种垃圾收集器
+> https://blog.csdn.net/u013595419/article/details/79332390
+
+- 垃圾收集算法——标记-整理算法（Mark-Compact）
+> https://blog.csdn.net/en_joker/article/details/79741737
+
+- 【理解HotSpot虚拟机】串行垃圾收集器Serial和Serial Old原理
+> https://blog.csdn.net/linxdcn/article/details/78154133
+
+- 说说JVM的GC功能之一GC算法的选择
+> https://blog.51cto.com/guojuanjun/1958421
+
+- 垃圾回收总结
+
+收集器 | 串行/并行/并发 | 新生代/老年代 | 算法 | 目标 | 适用场景
+---|---|---|---|---|---
+Serial	| 串行	| 新生代	| 复制算法	|响应速度优先 |	单CPU环境下的Client模式
+Serial Old |	串行	|老年代|	标记-整理|	响应速度优先|	单CPU环境下的Client模式、CMS的后备预案
+ParNew|	并行|	新生代|	复制算法|	响应速度优先|	多CPU环境时在Server模式下与CMS配合
+Parallel Scavenge|	并行|	新生代|	复制算法|	吞吐量优先|	在后台运算而不需要太多交互的任务
+Parallel Old|	并行|	老年代|	标记-整理|	吞吐量优先|	在后台运算而不需要太多交互的任务
+CMS|	并发|	老年代|	标记-清除|	响应速度优先|	集中在互联网站或B/S系统服务端上的Java应用
+G1|	并发|	both|	标记-整理+复制算法|	响应速度优先|	面向服务端应用，将来替换CMS
+--------------------- 
+作者：法海你懂不 
+来源：CSDN 
+原文：https://blog.csdn.net/u013595419/article/details/79332390 
+版权声明：本文为博主原创文章，转载请附上博文链接！
+--------------------- 
+
 - GC是什么时候触发的？
 > - Scavenge GC
 
@@ -1182,6 +1371,55 @@ Parallel Scavenge收集器的老年代版本，并行收集器，吞吐量优先
 > 2. 持久代（Perm）被写满；
 > 3. System.gc()被显示调用；
 > 4. 上一次GC之后Heap的各域分配策略动态变化；
+
+- 垃圾回收器学习之Full GC和CMS GC的区别
+> https://blog.csdn.net/weixin_33857679/article/details/87403005
+```
+针对HotSpot VM的实现，它里面的GC其实准确分类只有两大种：Partial GC：并不收集整个GC堆的模式
+Young GC：只收集young gen的GC
+Old GC：只收集old gen的GC。只有CMS的concurrent collection是这个模式。
+Mixed GC：收集整个young gen以及部分old gen的GC。只有G1有这个模式。
+
+HotSpot VM里其它非并发GC的触发条件复杂一些，不过大致的原理与上面说的其实一样。当然也总有例外。Parallel Scavenge（-XX:+UseParallelGC）框架下，默认是在要触发full GC前先执行一次young GC，并且两次GC之间能让应用程序稍微运行一小下，以期降低full GC的暂停时间（因为young GC会尽量清理了young gen的死对象，减少了full GC的工作量）。并发GC的触发条件就不太一样。以CMS GC为例，它主要是定时去检查old gen的使用量，当使用量超过了触发比例就会启动一次CMS GC，对old gen做并发收集。并发并行垃圾回收器在触发full gc之前都会先触发一下young垃圾回收，这个可以根据参数进行配置。而串行垃圾回收的full gc默认就是老年代回收。
+
+Full GC == Major GC指的是对老年代/永久代的stop the world的GC
+
+Full GC的次数 = 老年代GC时 stop the world的次数
+
+Full GC的时间 = 老年代GC时 stop the world的总时间
+
+CMS 不等于Full GC，我们可以看到CMS分为多个阶段，只有stop the world的阶段被计算到了Full GC的次数和时间，而和业务线程并发的GC的次数和时间则不被认为是Full GC。CMS主要可以分为initial mark(stop the world), concurrent mark, remark(stop the world), concurrent sweep几个阶段，其中initial mark和remark会stop the world。
+
+Full GC本身不会先进行Minor GC，我们可以配置，让Full GC之前先进行一次Minor GC，因为老年代很多对象都会引用到新生代的对象，先进行一次Minor GC可以提高老年代GC的速度。比如老年代使用CMS时，设置CMSScavengeBeforeRemark优化，让CMS remark之前先进行一次Minor GC。
+--------------------- 
+作者：weixin_33857679 
+来源：CSDN 
+原文：https://blog.csdn.net/weixin_33857679/article/details/87403005 
+版权声明：本文为博主原创文章，转载请附上博文链接！
+```
+
+- Major GC和Full GC的区别是什么？触发条件呢？
+```
+针对HotSpot VM的实现，它里面的GC其实准确分类只有两大种：
+Partial GC：并不收集整个GC堆的模式
+Young GC：只收集young gen的GC
+Old GC：只收集old gen的GC。只有CMS的concurrent collection是这个模式
+Mixed GC：收集整个young gen以及部分old gen的GC。只有G1有这个模式
+Full GC：收集整个堆，包括young gen、old gen、perm gen（如果存在的话）等所有部分的模式。
+Major GC通常是跟full GC是等价的，收集整个GC堆。但因为HotSpot VM发展了这么多年，外界对各种名词的解读已经完全混乱了，当有人说“major GC”的时候一定要问清楚他想要指的是上面的full GC还是old gen。
+
+最简单的分代式GC策略，按HotSpot VM的serial GC的实现来看，触发条件是：
+young GC：当young gen中的eden区分配满的时候触发。注意young GC中有部分存活对象会晋升到old gen，所以young GC后old gen的占用量通常会有所升高。
+full GC：当准备要触发一次young GC时，如果发现统计数据说之前young GC的平均晋升大小比目前old gen剩余的空间大，则不会触发young GC而是转为触发full GC（因为HotSpot VM的GC里，除了CMS的concurrent collection之外，其它能收集old gen的GC都会同时收集整个GC堆，包括young gen，所以不需要事先触发一次单独的young GC）；或者，如果有perm gen的话，要在perm gen分配空间但已经没有足够空间时，也要触发一次full GC；或者System.gc()、heap dump带GC，默认也是触发full GC。
+HotSpot VM里其它非并发GC的触发条件复杂一些，不过大致的原理与上面说的其实一样。
+当然也总有例外。Parallel Scavenge（-XX:+UseParallelGC）框架下，默认是在要触发full GC前先执行一次young GC，并且两次GC之间能让应用程序稍微运行一小下，以期降低full GC的暂停时间（因为young GC会尽量清理了young gen的死对象，减少了full GC的工作量）。这是HotSpot VM里的奇葩嗯。
+
+并发GC的触发条件就不太一样。以CMS GC为例，它主要是定时去检查old gen的使用量，当使用量超过了触发比例就会启动一次CMS GC，对old gen做并发收集。
+```
+
+
+
+
 - 详细介绍一下 CMS 垃圾回收器？
 > https://blog.csdn.net/mc90716/article/details/80158138
 
@@ -1191,6 +1429,8 @@ Parallel Scavenge收集器的老年代版本，并行收集器，吞吐量优先
 - 简述分代垃圾回收器是怎么工作的？
 > https://blog.csdn.net/jiang_zf/article/details/79436620
 
+- G1垃圾收集器之对象分配过程
+> https://www.jianshu.com/p/a0efa489b99f
 - 说一下 jvm 调优的工具？
 > https://www.cnblogs.com/wxisme/p/9878494.html
 > - jps,java版的ps命令，查看java进程及其相关的信息，如果你想找到一个java进程的pid，那可以用jps命令替代linux中的ps命令了，简单而方便。
